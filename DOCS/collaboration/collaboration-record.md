@@ -1,4 +1,7 @@
 # 7.16
 ## 九点
 明确任务分工以及项目整体目录构建
+明确每个需求文件的具体作用和具体交付物
 
+# 十点
+两个人分别根据自己的理解写 01-project-flow-map-format.md和02-product-prd-format.md
