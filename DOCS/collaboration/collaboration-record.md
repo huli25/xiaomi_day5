@@ -7,4 +7,6 @@
 两个人分别根据自己的理解写 01-project-flow-map-format.md和02-product-prd-format.md
 讨论决定使用谁的方案，并对方案中的内容进行人工审核和优化
 
-用hu，交付文件有问题需要修改，角色部分内容过多需要删减
+project-flow-map-format.md大纲，用hu，交付文件有问题需要修改，角色部分内容过多需要删减
+
+# 11:00
