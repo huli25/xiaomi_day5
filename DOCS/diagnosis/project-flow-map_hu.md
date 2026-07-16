@@ -85,15 +85,59 @@
 
 #### 1.2.2 配套交付物
 
+##### 1. 根目录文件
+
 | 交付物 | 描述 |
 |--------|------|
-| `docs/spec.md` | 需求规格说明书 |
-| `docs/design.md` | 架构设计与详细设计 |
-| `docs/safety-strategy.md` | 安全策略与风险等级定义 |
-| `docs/test-plan.md` | 测试计划与安全边界测试用例 |
-| `docs/test-record.md` | 测试执行记录 |
-| `ai-log.md` | AI辅助决策日志 |
-| `reflection.md` | 项目复盘与反思 |
+| `README.md` | 项目总览文档，包含项目背景、核心目标、整体目录说明、快速运行指引、核心能力边界等内容 |
+
+##### 2. SRC/ 目录
+
+| 交付物 | 描述 |
+|--------|------|
+| 项目原型源码 | 可运行的原型系统源代码 |
+| 程序运行/启动脚本 | 用于启动和运行原型的脚本 |
+| 测试用模拟数据 | 模拟车辆状态、语音指令样例等测试数据 |
+
+##### 3. PROTOTYPE/ 目录
+
+| 交付物 | 描述 |
+|--------|------|
+| `docs/prototype-guide.md` | 原型功能说明文档 |
+| `docs/prototype-capability.md` | 原型运行方式、能力边界说明 |
+| 原型效果截图/录屏 | 原型运行效果佐证材料（兜底证据） |
+
+##### 4. DOCS/ 子目录（8项）
+
+| 子目录 | 交付物 | 描述 |
+|--------|--------|------|
+| `diagnosis/` | `project-flow-map.md` | 项目流程图格式规范 |
+| `diagnosis/` | `problem-overview.md` | 问题全貌澄清文档 |
+| `diagnosis/` | `assumption.md` | 前置假设说明 |
+| `diagnosis/` | `non-goal.md` | 非目标界定文档 |
+| `options/` | `options-list.md` | 备选方案合集 |
+| `options/` | `decision-matrix.md` | 方案取舍矩阵（维度对比） |
+| `options/` | `rejected-options.md` | 放弃方案项及原因说明 |
+| `validation/` | `test-plan.md` | 验证计划文档 |
+| `validation/` | `test-record.md` | 测试用例与执行结果 |
+| `validation/` | `risk-list.md` | 风险分析清单 |
+| `validation/` | `review-records.md` | 评审（Review）记录 |
+| `collaboration/` | `team-division.md` | 团队分工说明 |
+| `collaboration/` | `meeting-records.md` | 会议记录 |
+| `collaboration/` | `decision-records.md` | 关键决策记录 |
+| `collaboration/` | `issue-tracking.md` | Issue（问题）跟踪记录 |
+| `design/` | `system-design.md` | 端到端完整系统设计文档 |
+| `design/` | `architecture.md` | 架构设计文档 |
+| `design/` | `flow-design.md` | 流程设计文档 |
+| `design/` | `module-design.md` | 模块设计文档 |
+| `design/` | `rule-design.md` | 规则设计文档 |
+| `decision/` | `final-recommendation.md` | 最终方案建议 |
+| `decision/` | `key-decisions.md` | 关键决策备忘与决策依据 |
+| `ai/` | `ai-log.md` | AI协作日志 |
+| `ai/` | `ai-adopted.md` | AI输出内容采纳清单 |
+| `ai/` | `ai-rejected.md` | AI输出内容拒绝清单 |
+| `reflection/` | `team-retrospective.md` | 团队项目复盘文档 |
+| `reflection/` | `personal-contribution.md` | 个人贡献说明 |
 
 ### 1.3 质量等级
 
