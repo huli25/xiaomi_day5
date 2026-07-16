@@ -183,13 +183,26 @@
 
 ### 4.4 核心模块必需文件
 
+#### 前端模块
+
 | 模块 | 必需文件 | 检查标准 |
 |------|---------|---------|
-| 任务编排引擎 | `src/orchestrator/` | 包含任务拆解、执行调度模块 |
-| 安全校验模块 | `src/validator/` | 包含权限、车况、风险校验模块 |
-| 确认交互模块 | `src/interaction/` | 包含确认发起、响应处理模块 |
-| 执行监控模块 | `src/executor/` | 包含执行跟踪、异常处理模块 |
-| 权限管控模块 | `src/permission/` | 包含角色管理、授权控制模块 |
+| 前端主应用 | `src/frontend/` | 包含指令输入、编排提交、结果展示 |
+| 拆解展示组件 | `src/frontend/components/disassembly/` | 包含任务列表、模糊标记展示 |
+| 确认交互组件 | `src/frontend/components/confirm/` | 包含确认/取消操作、参数补全 |
+| 时间线展示 | `src/frontend/components/timeline/` | 包含逐步结果、终态车态展示 |
+| 调试面板 | `src/frontend/components/debug/` | 包含身份切换、车态修改 |
+
+#### 后端模块
+
+| 模块 | 必需文件 | 检查标准 |
+|------|---------|---------|
+| 后端主目录 | `src/backend/` | 包含编排引擎、校验、交互、执行、权限模块 |
+| 任务编排引擎 | `src/backend/orchestrator/` | 包含任务拆解、执行调度模块 |
+| 安全校验模块 | `src/backend/validator/` | 包含权限、车况、风险校验模块 |
+| 确认交互模块 | `src/backend/interaction/` | 包含确认发起、响应处理模块 |
+| 执行监控模块 | `src/backend/executor/` | 包含执行跟踪、异常处理模块 |
+| 权限管控模块 | `src/backend/permission/` | 包含角色管理、授权控制模块 |
 
 ### 4.5 安全指标检查
 

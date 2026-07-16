@@ -10,5 +10,6 @@
 project-flow-map-format.md大纲，用hu，交付文件有问题需要修改，角色部分内容过多需要删减
 
 # 11:00
-product-prd-format.md的目标和非目标的合并，以及后续内容的优化
+product-prd-format.md的目标和非目标的合并，以及后续内容的优化。
+优化后的内容，核心模块必需文件处，需要分成前后端。
 
