@@ -100,97 +100,116 @@ SRC/
 
 ---
 
-## 二、实现计划（按阶段）
+## 二、实现计划（前后端并行）
 
-### 阶段1：基础设施搭建（P0）
+> **核心原则**：接口契约优先，前后端分离并行开发，互不阻塞。
 
-| 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
-|------|-------------|------|------|----------|------|
-| 1.1 | `init_frontend()` | 无 | React项目结构 | `cd frontend && npm run dev` | Vite版本兼容风险 |
-| 1.2 | `init_backend()` | 无 | Express项目结构 | `cd backend && npm run dev` | Node版本兼容风险 |
-| 1.3 | `setup_types()` | 无 | 共享类型定义 | `npm run type-check` | 前后端类型不一致风险 |
-| 1.4 | `config_cors()` | 无 | CORS配置 | 接口联通测试 | 跨域请求失败 |
-| 1.5 | `setup_state()` | 无 | 状态管理器 | `GET /api/state` 返回正确JSON | 状态初始化失败 |
+### 阶段0：接口契约定义（P0）
 
-### 阶段2：后端核心模块（P0）
+| 步骤 | 交付物 | 输入 | 输出 | 验证方法 | 风险 |
+|------|--------|------|------|----------|------|
+| 0.1 | API路由定义 | 无 | 所有REST接口签名 | 契约文档Review | 接口设计不合理 |
+| 0.2 | 共享类型定义 | 无 | `shared/types.ts` | TypeScript类型检查 | 前后端类型不一致 |
+| 0.3 | Mock数据生成 | 类型定义 | mock数据文件 | 前端可独立运行 | Mock与实现不符 |
 
-#### 2.1 状态管理层
+### 阶段A：后端核心模块（P0）—— 并行开发
 
-| 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
-|------|-------------|------|------|----------|------|
-| 2.1.1 | `VehicleStateManager` | 车态快照 | 内存状态对象 | `POST /api/vehicle` 更新后查询 | 状态同步丢失 |
-| 2.1.2 | `SessionManager` | 会话ID | 会话上下文 | `POST /api/orchestrate` 创建会话 | 并发会话冲突 |
-| 2.1.3 | `RoleManager` | role字符串 | 权限配置 | guest/owner切换生效 | 角色切换不生效 |
-
-#### 2.2 任务编排引擎
+#### A.1 基础设施（后端）
 
 | 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
 |------|-------------|------|------|----------|------|
-| 2.2.1 | `parseIntent(text)` | 自然语言文本 | 意图结构 | 单元测试「打开车窗」| 模板覆盖不足 |
-| 2.2.2 | `extractParams(task)` | 意图对象 | 参数列表+模糊标记 | 单元测试「留条缝」| 参数提取错误 |
-| 2.2.3 | `decomposeTasks(intent)` | 意图结构 | 任务列表 | 单元测试复合指令 | 拆解顺序错误 |
-| 2.2.4 | `loadTemplates()` | 无 | 模板Map | 模板命中测试 | YAML解析失败 |
+| A.1.1 | `init_backend()` | 无 | Express项目结构 | `cd backend && npm run dev` | Node版本兼容风险 |
+| A.1.2 | `setup_types()` | 共享类型 | 后端类型副本 | `npm run type-check` | 类型同步失败 |
+| A.1.3 | `config_cors()` | 无 | CORS配置 | 接口联通测试 | 跨域请求失败 |
 
-#### 2.3 安全校验模块
-
-| 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
-|------|-------------|------|------|----------|------|
-| 2.3.1 | `checkPermission(role, action)` | role+action | boolean | guest访问门锁→false | 权限校验绕过 |
-| 2.3.2 | `checkVehicleState(state, task)` | 车态+任务 | boolean+原因 | 行驶中开车窗→false | 车况校验遗漏 |
-| 2.3.3 | `assessRisk(task)` | 任务对象 | riskLevel | 高风险操作识别 | 风险等级误判 |
-| 2.3.4 | `detectAmbiguity(params)` | 参数列表 | ambiguity列表 | 「留条缝」标记模糊 | 模糊检测失效 |
-
-#### 2.4 规则引擎核心
+#### A.2 状态管理层
 
 | 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
 |------|-------------|------|------|----------|------|
-| 2.4.1 | `makeDecision(task, role, state)` | 任务+角色+车态 | decision | 三态输出验证 | 决策逻辑错误 |
-| 2.4.2 | `executeTask(task)` | 任务对象 | result | 模拟执行成功 | 执行状态不一致 |
-| 2.4.3 | `handlePartialFailure(tasks, failedIdx)` | 任务列表+失败索引 | 更新后任务列表 | 后续步blocked | 依赖关系处理错误 |
-| 2.4.4 | `logSession(session)` | 会话对象 | 完整日志 | 日志完整性检查 | 日志缺失 |
+| A.2.1 | `VehicleStateManager` | 车态快照 | 内存状态对象 | `POST /api/vehicle` 更新后查询 | 状态同步丢失 |
+| A.2.2 | `SessionManager` | 会话ID | 会话上下文 | `POST /api/orchestrate` 创建会话 | 并发会话冲突 |
+| A.2.3 | `RoleManager` | role字符串 | 权限配置 | guest/owner切换生效 | 角色切换不生效 |
 
-### 阶段3：前端核心模块（P0）
+#### A.3 任务编排引擎
 
-#### 3.1 主流程UI
+| 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
+|------|-------------|------|------|----------|------|
+| A.3.1 | `parseIntent(text)` | 自然语言文本 | 意图结构 | 单元测试「打开车窗」| 模板覆盖不足 |
+| A.3.2 | `extractParams(task)` | 意图对象 | 参数列表+模糊标记 | 单元测试「留条缝」| 参数提取错误 |
+| A.3.3 | `decomposeTasks(intent)` | 意图结构 | 任务列表 | 单元测试复合指令 | 拆解顺序错误 |
+| A.3.4 | `loadTemplates()` | 无 | 模板Map | 模板命中测试 | YAML解析失败 |
+
+#### A.4 安全校验模块
+
+| 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
+|------|-------------|------|------|----------|------|
+| A.4.1 | `checkPermission(role, action)` | role+action | boolean | guest访问门锁→false | 权限校验绕过 |
+| A.4.2 | `checkVehicleState(state, task)` | 车态+任务 | boolean+原因 | 行驶中开车窗→false | 车况校验遗漏 |
+| A.4.3 | `assessRisk(task)` | 任务对象 | riskLevel | 高风险操作识别 | 风险等级误判 |
+| A.4.4 | `detectAmbiguity(params)` | 参数列表 | ambiguity列表 | 「留条缝」标记模糊 | 模糊检测失效 |
+
+#### A.5 规则引擎核心
+
+| 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
+|------|-------------|------|------|----------|------|
+| A.5.1 | `makeDecision(task, role, state)` | 任务+角色+车态 | decision | 三态输出验证 | 决策逻辑错误 |
+| A.5.2 | `executeTask(task)` | 任务对象 | result | 模拟执行成功 | 执行状态不一致 |
+| A.5.3 | `handlePartialFailure(tasks, failedIdx)` | 任务列表+失败索引 | 更新后任务列表 | 后续步blocked | 依赖关系处理错误 |
+| A.5.4 | `logSession(session)` | 会话对象 | 完整日志 | 日志完整性检查 | 日志缺失 |
+
+### 阶段B：前端核心模块（P0）—— 并行开发
+
+> **独立开发模式**：前端使用Mock数据，不依赖后端服务，可独立完成UI和交互逻辑。
+
+#### B.1 基础设施（前端）
+
+| 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
+|------|-------------|------|------|----------|------|
+| B.1.1 | `init_frontend()` | 无 | React项目结构 | `cd frontend && npm run dev` | Vite版本兼容风险 |
+| B.1.2 | `setup_types()` | 共享类型 | 前端类型副本 | `npm run type-check` | 类型同步失败 |
+| B.1.3 | `setup_mock_api()` | Mock数据 | Mock API服务 | 前端独立运行 | Mock与实现不符 |
+
+#### B.2 主流程UI
 
 | 步骤 | 组件/模块名 | 输入 | 输出 | 验证命令 | 风险 |
 |------|-------------|------|------|----------|------|
-| 3.1.1 | `CommandInput` | 用户文本 | 提交事件 | 输入「打开车窗」 | 输入验证缺失 |
-| 3.1.2 | `TaskList` | 任务列表 | 可视化列表 | 展示拆解结果 | 列表渲染错误 |
-| 3.1.3 | `AmbiguityTag` | 模糊标记 | 高亮展示 | 「留条缝」可见标记 | 标记样式不一致 |
+| B.2.1 | `CommandInput` | 用户文本 | 提交事件 | 输入「打开车窗」 | 输入验证缺失 |
+| B.2.2 | `TaskList` | 任务列表 | 可视化列表 | 展示拆解结果 | 列表渲染错误 |
+| B.2.3 | `AmbiguityTag` | 模糊标记 | 高亮展示 | 「留条缝」可见标记 | 标记样式不一致 |
 
-#### 3.2 确认交互
-
-| 步骤 | 组件/模块名 | 输入 | 输出 | 验证命令 | 风险 |
-|------|-------------|------|------|----------|------|
-| 3.2.1 | `ConfirmDialog` | decision+原因 | 确认/取消事件 | 高风险操作弹窗 | 弹窗阻断失效 |
-| 3.2.2 | `ParameterInput` | ambiguous字段 | 补全参数 | 「留条缝」补参 | 参数格式错误 |
-| 3.2.3 | `DecisionBadge` | decision | 视觉区分 | 三态颜色区分 | 视觉区分不明显 |
-
-#### 3.3 调试面板
+#### B.3 确认交互
 
 | 步骤 | 组件/模块名 | 输入 | 输出 | 验证命令 | 风险 |
 |------|-------------|------|------|----------|------|
-| 3.3.1 | `RoleSwitcher` | owner/guest | 切换角色 | guest拒绝门锁 | 切换不生效 |
-| 3.3.2 | `VehicleStateEditor` | 车态字段 | 更新请求 | 改speed后编排生效 | 车态更新丢失 |
-| 3.3.3 | `StateSnapshot` | 无 | 当前快照展示 | 展示role+车态 | 快照显示错误 |
+| B.3.1 | `ConfirmDialog` | decision+原因 | 确认/取消事件 | 高风险操作弹窗 | 弹窗阻断失效 |
+| B.3.2 | `ParameterInput` | ambiguous字段 | 补全参数 | 「留条缝」补参 | 参数格式错误 |
+| B.3.3 | `DecisionBadge` | decision | 视觉区分 | 三态颜色区分 | 视觉区分不明显 |
 
-### 阶段4：六步闭环串联（P1）
+#### B.4 调试面板
+
+| 步骤 | 组件/模块名 | 输入 | 输出 | 验证命令 | 风险 |
+|------|-------------|------|------|----------|------|
+| B.4.1 | `RoleSwitcher` | owner/guest | 切换角色 | guest拒绝门锁 | 切换不生效 |
+| B.4.2 | `VehicleStateEditor` | 车态字段 | 更新请求 | 改speed后编排生效 | 车态更新丢失 |
+| B.4.3 | `StateSnapshot` | 无 | 当前快照展示 | 展示role+车态 | 快照显示错误 |
+
+### 阶段C：联调与闭环（P1）
 
 | 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
 |------|-------------|------|------|----------|------|
-| 4.1 | `orchestrate(text, role, state)` | 文本+角色+车态 | 编排结果 | 完整闭环测试 | 流程中断 |
-| 4.2 | `handleConfirm(sessionId, response)` | 会话ID+响应 | 更新结果 | 确认后继续执行 | 确认响应丢失 |
-| 4.3 | `recheckState(sessionId)` | 会话ID | 重新校验 | 改车态后确认再查 | 再查逻辑错误 |
-| 4.4 | `finalizeSession(sessionId)` | 会话ID | 终态记录 | 完整日志归档 | 日志不完整 |
+| C.1 | `replace_mock_with_real()` | Mock服务 | 真实API调用 | 联调测试 | 接口不兼容 |
+| C.2 | `orchestrate(text, role, state)` | 文本+角色+车态 | 编排结果 | 完整闭环测试 | 流程中断 |
+| C.3 | `handleConfirm(sessionId, response)` | 会话ID+响应 | 更新结果 | 确认后继续执行 | 确认响应丢失 |
+| C.4 | `recheckState(sessionId)` | 会话ID | 重新校验 | 改车态后确认再查 | 再查逻辑错误 |
+| C.5 | `finalizeSession(sessionId)` | 会话ID | 终态记录 | 完整日志归档 | 日志不完整 |
 
-### 阶段5：增强与优化（P2）
+### 阶段D：增强与优化（P2）
 
 | 步骤 | 函数/模块名 | 输入 | 输出 | 验证命令 | 风险 |
 |------|-------------|------|------|----------|------|
-| 5.1 | `TimelineView` | 会话对象 | 时间线UI | 逐步结果展示 | 样式不一致 |
-| 5.2 | `exportLog(sessionId)` | 会话ID | 导出JSON | 日志导出验证 | 导出格式错误 |
-| 5.3 | `expandTemplates()` | 新意图 | 更新模板 | 模板覆盖扩展 | 新模板冲突 |
+| D.1 | `TimelineView` | 会话对象 | 时间线UI | 逐步结果展示 | 样式不一致 |
+| D.2 | `exportLog(sessionId)` | 会话ID | 导出JSON | 日志导出验证 | 导出格式错误 |
+| D.3 | `expandTemplates()` | 新意图 | 更新模板 | 模板覆盖扩展 | 新模板冲突 |
 
 ---
 
@@ -225,99 +244,66 @@ SRC/
 
 ## 四、依赖关系
 
-### 4.1 任务依赖图（文本版）
+### 4.1 任务依赖图（并行开发模式）
 
 ```
-P0 核心安全功能（优先完成）
+════════════════════════════════════════════════════════════
+                    并行开发启动线
+════════════════════════════════════════════════════════════
+
+         ┌─────────────────────────────────┐
+         │ 阶段0：接口契约定义              │
+         │                                 │
+         │  0.1 API路由定义                │
+         │  0.2 共享类型定义               │
+         │  0.3 Mock数据生成               │
+         └───────────────┬─────────────────┘
+                         │
+         ┌───────────────┴───────────────┐
+         │                               │
+         ▼                               ▼
+═════════════════════════   ══════════════════════════════════
+阶段A：后端核心模块        阶段B：前端核心模块（Mock模式）
+═════════════════════════   ══════════════════════════════════
+
+┌───────────────────┐     ┌───────────────────┐
+│ A.1 基础设施(后端) │     │ B.1 基础设施(前端) │
+│     │              │     │     │              │
+│     ▼              │     │     ▼              │
+│ A.2 状态管理层     │     │ B.2 主流程UI       │
+│     │              │     │     │              │
+│     ▼              │     │     ▼              │
+│ A.3 任务编排引擎   │     │ B.3 确认交互       │
+│     │              │     │     │              │
+│     ▼              │     │     ▼              │
+│ A.4 安全校验模块   │     │ B.4 调试面板       │
+│     │              │     │     │              │
+│     ▼              │     │     │              │
+│ A.5 规则引擎核心   │     │ 【前端可独立开发】 │
+└─────────┬──────────┘     └───────────────────┘
+          │
+          ▼
+════════════════════════════════════════════════════════════
+         前后端联调阶段（阶段C）
 ════════════════════════════════════════════════════════════
 
 ┌─────────────────────────────────────────────┐
-│ 阶段1：基础设施                               │
-│ 1.1-1.5 项目初始化                          │
+│ C.1 替换Mock为真实API                        │
+│ C.2 orchestrate() 联调                      │
+│ C.3 handleConfirm() 联调                    │
+│ C.4 recheckState() 联调                     │
+│ C.5 finalizeSession() 联调                  │
 └────────────────────┬────────────────────────┘
                      │
-                     ▼
-┌─────────────────────────────────────────────┐
-│ 阶段2：后端核心模块                           │
-│                                             │
-│ 2.1 状态管理层                              │
-│     ├── VehicleStateManager                 │
-│     ├── SessionManager                      │
-│     └── RoleManager                         │
-│              │                              │
-│              ▼                              │
-│ 2.2 任务编排引擎                            │
-│     ├── parseIntent()                       │
-│     ├── extractParams()                     │
-│     ├── decomposeTasks()                    │
-│     └── loadTemplates()                     │
-│              │                              │
-│              ▼                              │
-│ 2.3 安全校验模块                            │
-│     ├── checkPermission()                   │
-│     ├── checkVehicleState()                 │
-│     ├── assessRisk()                        │
-│     └── detectAmbiguity()                   │
-│              │                              │
-│              ▼                              │
-│ 2.4 规则引擎核心                            │
-│     ├── makeDecision()                      │
-│     ├── executeTask()                       │
-│     ├── handlePartialFailure()              │
-│     └── logSession()                        │
-└────────────────────┬────────────────────────┘
-                     │
-                     ▼
-════════════════════════════════════════════════════════════
-
-P0 功能完整（可并行）
-════════════════════════════════════════════════════════════
-
-┌─────────────────────────────────────────────┐
-│ 阶段3：前端核心模块                           │
-│                                             │
-│ 3.1 主流程UI                                │
-│     ├── CommandInput                        │
-│     ├── TaskList                           │
-│     └── AmbiguityTag                        │
-│                                             │
-│ 3.2 确认交互                                │
-│     ├── ConfirmDialog                       │
-│     ├── ParameterInput                      │
-│     └── DecisionBadge                       │
-│                                             │
-│ 3.3 调试面板                                │
-│     ├── RoleSwitcher                        │
-│     ├── VehicleStateEditor                  │
-│     └── StateSnapshot                       │
-└────────────────────┬────────────────────────┘
-                     │
-════════════════════════════════════════════════════════════
-
-P1 闭环演示（依赖P0）
-════════════════════════════════════════════════════════════
-
-┌─────────────────────────────────────────────┐
-│ 阶段4：六步闭环串联                           │
-│                                             │
-│ orchestrate() → handleConfirm()            │
-│      │                    │                │
-│      ▼                    ▼                │
-│ recheckState() ←─ finalizeSession()        │
-│                                             │
-│ 输出：完整闭环 + 一正一反演示                 │
-└─────────────────────────────────────────────┘
-                     │
-                     ▼
 ════════════════════════════════════════════════════════════
 
 P2 增强优化（可延后）
 ════════════════════════════════════════════════════════════
 
 ┌─────────────────────────────────────────────┐
-│ 阶段5：增强与优化                             │
-│                                             │
-│ TimelineView ──→ exportLog ──→ expandTemplates
+│ D.1 TimelineView 时间线                     │
+│ D.2 exportLog 日志导出                      │
+│ D.3 expandTemplates 模板扩展                │
 └─────────────────────────────────────────────┘
 ```
 
@@ -325,11 +311,11 @@ P2 增强优化（可延后）
 
 | 里程碑 | 完成条件 | 对应阶段 | 预计工时 | 验收标准 |
 |--------|----------|----------|----------|----------|
-| **M1: MVP基础** | 阶段1+2.1 完成 | P0 | 4h | 后端可启动，状态管理正常 |
-| **M2: 安全核心** | 阶段2.2-2.4 完成 | P0 | 8h | R1-R8 核心逻辑跑通 |
-| **M3: 前端可用** | 阶段3 完成 | P0 | 7h | UI交互完整，调试面板可用 |
-| **M4: 闭环演示** | 阶段4 完成 | P1 | 4h | 一正一反可演示，时间线可追溯 |
-| **M5: 增强优化** | 阶段5 完成 | P2 | 3h | 体验优化，模板扩展 |
+| **M0: 契约确立** | 阶段0 完成 | P0 | 2h | 类型定义Review通过，前后端无歧义 |
+| **M1: 后端可用** | 阶段A 完成 | P0 | 10h | 后端API全部可用，核心逻辑跑通 |
+| **M2: 前端可用** | 阶段B 完成（Mock模式） | P0 | 9h | UI交互完整，可独立演示 |
+| **M3: 联调完成** | 阶段C 完成 | P1 | 4h | 真实API联调通过，闭环演示成功 |
+| **M4: 增强优化** | 阶段D 完成 | P2 | 3h | 体验优化，模板扩展 |
 
 ### 4.3 验收检查清单
 
@@ -362,7 +348,100 @@ P2 增强优化（可延后）
 | POST | `/api/vehicle` | 更新车态 | `VehicleState` | `{updated}` |
 | POST | `/api/role` | 切换角色 | `{role}` | `{updated}` |
 
-### 5.2 核心数据类型
+### 5.2 错误码设计
+
+#### 5.2.1 错误响应格式
+
+所有接口的错误响应统一使用以下 JSON 结构：
+
+```json
+{
+  "error": "错误描述信息（供开发者/调试用）",
+  "code": "错误码",
+  "field": "触发错误的字段名（可选）"
+}
+```
+
+#### 5.2.2 错误码分类
+
+| 错误码 | 说明 | HTTP状态码 | 触发场景 | 示例 |
+|--------|------|------------|----------|------|
+| **安全规则类 (SEC_)** | | | | |
+| `SEC_VEHICLE_MOVING` | 车辆处于行驶状态，禁止该操作 | 403 | 行驶中(D档或speed>0)执行解锁/开车窗等 | `{"error":"行驶状态下禁止执行门锁操作","code":"SEC_VEHICLE_MOVING","field":"gear"}` |
+| `SEC_FAULT_ACTIVE` | 车辆故障中，禁止敏感操作 | 403 | fault=true时执行空调调节等 | `{"error":"车辆故障中，禁止执行操作","code":"SEC_FAULT_ACTIVE","field":"fault"}` |
+| `SEC_SPEED_TOO_HIGH` | 车速过高，禁止该操作 | 403 | speed>120时执行开窗等 | `{"error":"当前车速过高，请先减速","code":"SEC_SPEED_TOO_HIGH","field":"speedKmh"}` |
+| `SEC_RISK_LEVEL_HIGH` | 操作风险等级过高 | 403 | 高风险操作未经确认 | `{"error":"该操作风险较高，需要确认","code":"SEC_RISK_LEVEL_HIGH"}` |
+| **权限规则类 (PER_)** | | | | |
+| `PER_GUEST_FORBIDDEN` | 访客身份无权限执行该操作 | 403 | guest角色执行门锁/授权相关操作 | `{"error":"访客身份无权执行门锁操作","code":"PER_GUEST_FORBIDDEN","field":"role"}` |
+| `PER_ROLE_REQUIRED` | 缺少必需的角色标识 | 400 | role字段为空或非法 | `{"error":"role字段缺失或无效","code":"PER_ROLE_REQUIRED","field":"role"}` |
+| `PER_CONFIRM_REQUIRED` | 操作需要先确认 | 400 | 执行需confirm的步骤 | `{"error":"该操作需要先确认","code":"PER_CONFIRM_REQUIRED"}` |
+| **车态不匹配类 (STA_)** | | | | |
+| `STA_GEAR_INVALID` | 挡位状态不允许该操作 | 400 | N档执行行驶相关操作 | `{"error":"当前挡位不允许该操作","code":"STA_GEAR_INVALID","field":"gear"}` |
+| `STA_BATTERY_LOW` | 电量过低，禁止该操作 | 400 | batteryPct<10时执行高耗电操作 | `{"error":"电量过低，无法执行该操作","code":"STA_BATTERY_LOW","field":"batteryPct"}` |
+| `STA_CONFLICT` | 任务之间存在冲突 | 400 | 同时执行矛盾的操作（如开窗和关窗） | `{"error":"任务操作存在冲突","code":"STA_CONFLICT"}` |
+| `STA_AMBIGUITY` | 指令存在歧义需要澄清 | 400 | 模糊参数未补全 | `{"error":"指令存在歧义，请补充参数","code":"STA_AMBIGUITY","field":"params"}` |
+| **会话状态类 (SES_)** | | | | |
+| `SES_ALREADY_AWAITING` | 已有待确认会话，无法新建 | 409 | 存在awaiting_confirm状态会话时再次提交 | `{"error":"存在待确认的会话，请先处理","code":"SES_ALREADY_AWAITING"}` |
+| `SES_NOT_FOUND` | 会话不存在 | 404 | 访问不存在的sessionId | `{"error":"会话不存在","code":"SES_NOT_FOUND","field":"sessionId"}` |
+| `SES_STATUS_INVALID` | 会话状态不允许该操作 | 400 | 已完成的会话再次confirm | `{"error":"会话已完成，无法执行该操作","code":"SES_STATUS_INVALID"}` |
+| `SES_ALREADY_CANCELLED` | 会话已取消 | 400 | 取消已取消的会话 | `{"error":"会话已取消","code":"SES_ALREADY_CANCELLED"}` |
+| **系统错误类 (SYS_)** | | | | |
+| `SYS_TIMEOUT` | 请求处理超时 | 504 | 服务端处理超时 | `{"error":"处理超时，请重试","code":"SYS_TIMEOUT"}` |
+| `SYS_INTERNAL` | 系统内部错误 | 500 | 未预期的异常 | `{"error":"系统内部错误","code":"SYS_INTERNAL"}` |
+| `SYS_UNAVAILABLE` | 服务不可用 | 503 | 后端服务未启动 | `{"error":"服务暂不可用","code":"SYS_UNAVAILABLE"}` |
+| **输入验证类 (VAL_)** | | | | |
+| `VAL_TEXT_EMPTY` | 指令文本为空 | 400 | text字段为空 | `{"error":"指令文本不能为空","code":"VAL_TEXT_EMPTY","field":"text"}` |
+| `VAL_TEXT_TOO_LONG` | 指令文本过长 | 400 | text长度超过200字符 | `{"error":"指令文本过长，最大200字符","code":"VAL_TEXT_TOO_LONG","field":"text"}` |
+| `VAL_FIELD_MISSING` | 必需字段缺失 | 400 | 缺少必需字段 | `{"error":"缺少必需字段","code":"VAL_FIELD_MISSING","field":"xxx"}` |
+| `VAL_FIELD_TYPE` | 字段类型错误 | 400 | 字段类型不匹配 | `{"error":"字段类型错误","code":"VAL_FIELD_TYPE","field":"xxx"}` |
+| `VAL_FIELD_RANGE` | 字段值超出范围 | 400 | speedKmh不在0-200范围 | `{"error":"字段值超出允许范围","code":"VAL_FIELD_RANGE","field":"xxx"}` |
+
+#### 5.2.3 错误码使用规则
+
+1. **安全规则类 (SEC_*)**: 返回 HTTP 403，禁止操作
+2. **权限规则类 (PER_*)**: 返回 HTTP 403（安全原因）或 400（格式问题）
+3. **车态不匹配类 (STA_*)**: 返回 HTTP 400，附带 `field` 指出问题字段
+4. **会话状态类 (SES_*)**: 
+   - `SES_NOT_FOUND`: HTTP 404
+   - `SES_ALREADY_AWAITING`: HTTP 409（冲突）
+   - 其他: HTTP 400
+5. **系统错误类 (SYS_*)**: 
+   - `SYS_TIMEOUT`: HTTP 504
+   - `SYS_INTERNAL`: HTTP 500
+   - `SYS_UNAVAILABLE`: HTTP 503
+6. **输入验证类 (VAL_*)**: 返回 HTTP 400，附带 `field` 指出问题字段
+
+#### 5.2.4 前端错误处理建议
+
+```typescript
+// 错误码到用户提示的映射
+const errorMessages: Record<string, string> = {
+  'SEC_VEHICLE_MOVING': '车辆正在行驶，请先停车',
+  'SEC_FAULT_ACTIVE': '车辆故障中，请先处理',
+  'SEC_SPEED_TOO_HIGH': '车速过快，请先减速',
+  'SEC_RISK_LEVEL_HIGH': '该操作需要确认',
+  'PER_GUEST_FORBIDDEN': '访客身份无权执行该操作',
+  'PER_ROLE_REQUIRED': '请选择您的身份',
+  'PER_CONFIRM_REQUIRED': '请先确认操作',
+  'STA_GEAR_INVALID': '当前挡位不支持该操作',
+  'STA_BATTERY_LOW': '电量不足，无法执行该操作',
+  'STA_CONFLICT': '操作存在冲突，请重新描述',
+  'STA_AMBIGUITY': '请明确操作参数',
+  'SES_ALREADY_AWAITING': '已有待确认的操作，请先处理',
+  'SES_NOT_FOUND': '会话不存在',
+  'SES_STATUS_INVALID': '会话状态不支持该操作',
+  'SYS_TIMEOUT': '网络超时，请重试',
+  'SYS_INTERNAL': '系统异常，请稍后重试',
+  'SYS_UNAVAILABLE': '服务暂时不可用',
+  'VAL_TEXT_EMPTY': '请输入指令',
+  'VAL_TEXT_TOO_LONG': '指令过长，请精简',
+  'VAL_FIELD_MISSING': '信息不完整',
+  'VAL_FIELD_TYPE': '信息格式错误',
+  'VAL_FIELD_RANGE': '数值超出范围',
+};
+```
+
+### 5.3 核心数据类型
 
 ```typescript
 // 角色
@@ -448,8 +527,9 @@ open http://localhost:5173             # 打开前端
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v0.1 | 2026-07-16 | 初始版本：基于方案一（React+Express规则模板）的完整实现计划 |
+| v0.2 | 2026-07-16 | 重构实现计划：接口契约优先，前后端并行开发模式 |
 
 ---
 
 **文档状态**：草稿
-**下一步**：进入SRC/目录开始实现阶段1
+**下一步**：进入SRC/目录开始实现阶段0（接口契约定义）
