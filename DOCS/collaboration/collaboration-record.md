@@ -5,3 +5,4 @@
 
 # 十点
 两个人分别根据自己的理解写 01-project-flow-map-format.md和02-product-prd-format.md
+讨论决定使用谁的方案，并对方案中的内容进行人工审核和优化
