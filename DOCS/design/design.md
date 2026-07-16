@@ -92,17 +92,40 @@
 
 ---
 
-## 三方案技术对照（不裁决）
+## 方案四 · Python + 前端（FastAPI + Vue）
 
-| 技术点 | 方案一 | 方案二 | 方案三 |
-| --- | --- | --- | --- |
-| 题面门槛 | 须满足 §0 | 须满足 §0 | 须满足 §0 |
-| UI 技术 | React + Vite | React + Next | React + Vite |
-| 服务端技术 | Express | Next Route Handlers | Express |
-| 进程数 | 2 | 1 | 2 |
-| 拆解技术 | 规则模板 | 规则模板 | 模板 + 外部 LLM |
-| 判定技术 | 服务端规则引擎 | 同左 | 同左（LLM 不准出） |
-| 额外依赖 | 无 | 无 | LLM API / 网络 |
+### 使用技术
+
+| 层级 | 技术 |
+| --- | --- |
+| 前端 | Vue 3、Vite、TypeScript |
+| 后端 | FastAPI、Python 3.11+、Pydantic |
+| 接口 | JSON REST（HTTP） |
+| 运行时状态 | 服务端进程内内存（车态 / 会话） |
+| 任务拆解 | 本地规则 / 关键词 / 正则模板（Python 规则引擎） |
+| 安全判定 | Python 规则引擎（权限 + 车况 + 模糊/冲突 → execute/confirm/reject） |
+| 执行与记录 | 服务端模拟执行 + 会话事件日志 |
+| 数据库 | SQLite（SQLAlchemy ORM） |
+| 工程形态 | 两个进程：前端 dev server + 后端 ASGI 服务（Uvicorn） |
+| 仓库大致划分 | `SRC/frontend` · `SRC/backend` |
+
+### 相对另三套（仅技术取向）
+
+Python 规则引擎实现自然、Pydantic 验证强大；FastAPI 自动 OpenAPI 文档；AI/ML 扩展方便（后续可集成 LangChain 等）；需维护两套语言栈。
+
+---
+
+## 四方案技术对照（不裁决）
+
+| 技术点 | 方案一 | 方案二 | 方案三 | 方案四 |
+| --- | --- | --- | --- | --- |
+| 题面门槛 | 须满足 §0 | 须满足 §0 | 须满足 §0 | 须满足 §0 |
+| UI 技术 | React + Vite | React + Next | React + Vite | Vue 3 + Vite |
+| 服务端技术 | Express | Next Route Handlers | Express | FastAPI (Python) |
+| 进程数 | 2 | 1 | 2 | 2 |
+| 拆解技术 | 规则模板 | 规则模板 | 模板 + 外部 LLM | 规则模板 |
+| 判定技术 | 服务端规则引擎 | 同左 | 同左（LLM 不准出） | Python 规则引擎 |
+| 额外依赖 | 无 | 无 | LLM API / 网络 | Python 生态 |
 
 页面布局、组件拆分、接口字段、规则表细则等 → 留给选定方案后的 Tasks / 实现，不在本文展开。
 
